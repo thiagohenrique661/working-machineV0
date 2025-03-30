@@ -1,0 +1,552 @@
+[
+    {
+        "id": "2b26a0eb9e3a475a",
+        "type": "tab",
+        "label": "working-machineV0",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "fb6136144252f489",
+        "type": "junction",
+        "z": "2b26a0eb9e3a475a",
+        "x": 960,
+        "y": 40,
+        "wires": [
+            [
+                "5cc01c8ec2a5dd08"
+            ]
+        ]
+    },
+    {
+        "id": "af6f7d2ab88770a7",
+        "type": "junction",
+        "z": "2b26a0eb9e3a475a",
+        "x": 960,
+        "y": 80,
+        "wires": [
+            [
+                "a6cfc97073366d1c"
+            ]
+        ]
+    },
+    {
+        "id": "1313461579cd981d",
+        "type": "inject",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Generate Part",
+        "props": [
+            {
+                "p": "payload.id",
+                "v": "ABC123",
+                "vt": "str"
+            },
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"Switch1\":{\"Action\":\"ON\"},\"id\":\"ABC123\"}",
+        "payloadType": "json",
+        "x": 170,
+        "y": 260,
+        "wires": [
+            [
+                "99d2353cd87673a0"
+            ]
+        ]
+    },
+    {
+        "id": "99d2353cd87673a0",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Action Captured",
+        "func": "function handleSwitch(payload,switchName,verifyAction) {\n    let switchKey = Object.keys(payload).find(key => key.startsWith(switchName)) // extrai a chave que chegou no payload;\n    let switchState = context.get(switchName) || null;\n    let actionValue  = payload[switchKey] ? payload[switchKey].Action : null;\n    let verifyProd = context.get(verifyAction) || false;\n\n    switchState = actionValue || switchState // Adquire o estado atuação de produçãp\n\n    if(switchState === \"ON\") {\n        verifyProd = true;\n    }\n    context.set(verifyAction,verifyProd);\n\n    return {\n        switchState: switchState,\n        verifyProd: verifyProd\n    };\n}\n\nif (msg.payload) {\n\nlet payload = msg.payload;\nlet machineProd = handleSwitch(payload, 'Switch1','actionTrue');\n\nmsg.infoAction = {\n    switch1: machineProd.switchState,\n    actionTrue: machineProd.verifyProd\n}\nmachineProd.verifyProd = false;\ncontext.get('actionTrue',machineProd.verifyProd);\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 260,
+        "wires": [
+            [
+                "10cebca395b96b26"
+            ]
+        ],
+        "icon": "node-red/swap.svg"
+    },
+    {
+        "id": "10cebca395b96b26",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Captured Prod",
+        "func": "let machineID = msg.payload && msg.payload.id ? msg.payload.id : null;\nlet {actionTrue} = msg.infoAction || {};\nlet prodTrue = context.get('prodTrue') || false;\n\nif (actionTrue) {\n    prodTrue = true\n};\ncontext.set('prodTrue',prodTrue);\n\nmsg.captureProd = {\n    prodTrue,\n    machineID\n}\nprodTrue = false;\ncontext.set('prodTrue',prodTrue);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 260,
+        "wires": [
+            [
+                "eaddcae52c4d3fd3"
+            ]
+        ],
+        "icon": "node-red/file-in.svg"
+    },
+    {
+        "id": "1a0ffc9b72fd426d",
+        "type": "inject",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Each once 1 sec",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 420,
+        "y": 220,
+        "wires": [
+            [
+                "10cebca395b96b26"
+            ]
+        ]
+    },
+    {
+        "id": "eaddcae52c4d3fd3",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "saveProd",
+        "func": "let {prodTrue, machineID} = msg.captureProd || {};\nlet [dateLastProd, deviceID] = ['dateLastProd','deviceID'].map(key => context.get(key) || null);\nlet countPart = context.get('countPart') || 0;\nlet currentTimestamp = new Date();\n\nconst actions = {\n    getProd: () => {countPart += 1; dateLastProd = currentTimestamp},\n    getDeviceId: () => {deviceID = machineID}\n}\nconst conditions = {\n    getProd: prodTrue,\n    getDeviceId: machineID && deviceID !== machineID\n}\n\nObject.entries(conditions).forEach(([condition, isTrue]) => {\n    if (isTrue && actions[condition]) actions[condition]();\n});\ncontext.set('dateLastProd', dateLastProd);\ncontext.set('countPart', countPart);\ncontext.set('deviceID', deviceID);\n\nmsg.saveProd = {\n    prodTrue,\n    dateLastProd,\n    countPart,\n    deviceID\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 260,
+        "wires": [
+            [
+                "0d6816286cb6c561",
+                "ad51cb3a1dda68d6"
+            ]
+        ],
+        "icon": "font-awesome/fa-save"
+    },
+    {
+        "id": "0d6816286cb6c561",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "CNC 01",
+        "func": "let {countPart,deviceID,prodTrue} = msg.saveProd || {};\n\nif (msg.saveProd) {\n    msg.payload = {\n        prodTrue,\n        pecas: countPart,\n        deviceID\n    }\n    msg.dataDashboard = msg.payload;\n    return msg;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 880,
+        "y": 240,
+        "wires": [
+            [
+                "78819c5786e9313e",
+                "fb6136144252f489",
+                "af6f7d2ab88770a7"
+            ]
+        ],
+        "icon": "font-awesome/fa-bars"
+    },
+    {
+        "id": "ad51cb3a1dda68d6",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Time prod machine",
+        "func": "let {dateLastProd,deviceID} = msg.saveProd || {};\nlet currentTimestamp = new Date();\nlet timeLastProd = dateLastProd !== null ? (currentTimestamp.getTime() - dateLastProd) / 1000 : null;\n\nmsg.prodTime = {\n    timeLastProd,\n    deviceID\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 910,
+        "y": 300,
+        "wires": [
+            [
+                "d9e5ad80f2fd458d"
+            ]
+        ],
+        "icon": "font-awesome/fa-hourglass-2"
+    },
+    {
+        "id": "d9e5ad80f2fd458d",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "machine Status",
+        "func": "let { timeLastProd, deviceID } = msg.prodTime || {};\nlet currentStatus = context.get('currentStatus') || null;\n\nif (typeof timeLastProd === \"number\" && timeLastProd !== null) {\n    \n    const workingMachine = timeLastProd >= 0 && timeLastProd <= 10;\n    const stoppedMachine = timeLastProd >= 11;\n    const newStatus = workingMachine ? \"TRABALHANDO\" : stoppedMachine ? \"INATIVA\" : currentStatus;\n\n    if (newStatus !== currentStatus) {\n        context.set('currentStatus', newStatus);\n        currentStatus = newStatus;\n    }\n}\nmsg.status = { currentStatus, deviceID };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1100,
+        "y": 300,
+        "wires": [
+            [
+                "982734122152a0c9"
+            ]
+        ],
+        "icon": "node-red/status.svg"
+    },
+    {
+        "id": "982734122152a0c9",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Machine Activity",
+        "func": "let {currentStatus,deviceID} = msg.status;\nlet [sumWorking, sumIdle] = ['sumWorking','sumIdle'].map(key => context.get(key) || 0);\n\nif (currentStatus === \"TRABALHANDO\") sumWorking += 1;\nelse if(currentStatus === \"INATIVA\") sumIdle += 1;\n\ncontext.set('sumWorking',sumWorking);\ncontext.set('sumIdle',sumIdle);\n\nmsg.activyMachine = {\n    currentStatus,\n    sumWorking,\n    sumIdle\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1320,
+        "y": 300,
+        "wires": [
+            [
+                "5048a39649ebaeab"
+            ]
+        ],
+        "icon": "font-awesome/fa-paper-plane-o"
+    },
+    {
+        "id": "5cc01c8ec2a5dd08",
+        "type": "ui_text",
+        "z": "2b26a0eb9e3a475a",
+        "group": "e772e303aece2075",
+        "order": 1,
+        "width": "8",
+        "height": "1",
+        "name": "",
+        "label": "MACHINE TAG",
+        "format": "{{msg.payload.deviceID}}",
+        "layout": "col-center",
+        "className": "",
+        "style": true,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1520,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "a6cfc97073366d1c",
+        "type": "ui_gauge",
+        "z": "2b26a0eb9e3a475a",
+        "name": "",
+        "group": "e772e303aece2075",
+        "order": 2,
+        "width": "8",
+        "height": "4",
+        "gtype": "donut",
+        "title": "PEÇAS",
+        "label": "units",
+        "format": "{{msg.payload.pecas}}",
+        "min": 0,
+        "max": "100000",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "0",
+        "seg2": "100",
+        "diff": false,
+        "className": "",
+        "x": 1500,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "a31721d51f565044",
+        "type": "ui_text",
+        "z": "2b26a0eb9e3a475a",
+        "group": "e772e303aece2075",
+        "order": 6,
+        "width": "8",
+        "height": "2",
+        "name": "",
+        "label": "STATUS",
+        "format": "{{msg.activyMachine.currentStatus}}",
+        "layout": "col-center",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1760,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "5048a39649ebaeab",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Sum Activy",
+        "func": "let { sumWorking = 0, sumIdle = 0 } = msg.activyMachine || {};\nlet { timeLastProd = 0 } = msg.prodTime || {}; \n\nfunction secondsToHours(totalSeconds) {\n    var hours = String(Math.floor(totalSeconds / 3600)).padStart(2, \"0\");\n    var minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, \"0\");\n    var seconds = String(totalSeconds % 60).padStart(2, \"0\");\n\n    return `${hours}:${minutes}:${seconds}`;\n}\n\nmsg.sumActivy = {\n    totalWorking: secondsToHours(sumWorking),\n    totalIdle: secondsToHours(sumIdle),\n    timeLastProd: secondsToHours(Math.round(timeLastProd))\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1530,
+        "y": 300,
+        "wires": [
+            [
+                "a31721d51f565044",
+                "ad3f2c74d084363a",
+                "1f7fd1e7dded3aca",
+                "f5dfd6458c736307"
+            ]
+        ],
+        "icon": "font-awesome/fa-plus-circle"
+    },
+    {
+        "id": "ad3f2c74d084363a",
+        "type": "ui_text",
+        "z": "2b26a0eb9e3a475a",
+        "group": "e772e303aece2075",
+        "order": 4,
+        "width": "4",
+        "height": 1,
+        "name": "",
+        "label": "TEMPO TRABALHADO",
+        "format": "{{msg.sumActivy.totalWorking}}",
+        "layout": "col-center",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1810,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "1f7fd1e7dded3aca",
+        "type": "ui_text",
+        "z": "2b26a0eb9e3a475a",
+        "group": "e772e303aece2075",
+        "order": 5,
+        "width": "4",
+        "height": 1,
+        "name": "",
+        "label": "TEMPO PARADO",
+        "format": "{{msg.sumActivy.totalIdle}}",
+        "layout": "col-center",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1790,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "f5dfd6458c736307",
+        "type": "ui_text",
+        "z": "2b26a0eb9e3a475a",
+        "group": "e772e303aece2075",
+        "order": 3,
+        "width": "8",
+        "height": "1",
+        "name": "",
+        "label": "ÚLTIMA PRODUÇÃO",
+        "format": "{{msg.sumActivy.timeLastProd}}",
+        "layout": "col-center",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1800,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "4ea2f4f86bca809c",
+        "type": "sqlite",
+        "z": "2b26a0eb9e3a475a",
+        "mydb": "5e7724e268dab539",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 1560,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "78819c5786e9313e",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Format payload",
+        "func": "let {prodTrue,deviceID} = msg.payload;\nlet unitProd = context.get('unitProd') || null;\nlet timestamp = new Date().getTime();\n\nif (prodTrue) {\n    unitProd = \"Peças\";\n    \n    msg.payload = {\n        unitProd,\n        deviceID,\n        timestamp \n    }\n    return msg;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1060,
+        "y": 240,
+        "wires": [
+            [
+                "a72d7fa5920df885"
+            ]
+        ],
+        "icon": "node-red/file.svg"
+    },
+    {
+        "id": "27dec04cad21ab29",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Command create table",
+        "func": "let commandCreateTable;\n\ncommandCreateTable = `\n    CREATE TABLE IF NOT EXISTS Machines (\n        unitProd INTEGER,\n        deviceID TEXT,\n        timestamp INTEGER\n    );\n`;\n\nmsg.topic = commandCreateTable;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1380,
+        "y": 140,
+        "wires": [
+            [
+                "4ea2f4f86bca809c"
+            ]
+        ],
+        "icon": "node-red/db.svg"
+    },
+    {
+        "id": "4dc6bd431edb36aa",
+        "type": "inject",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Trigger create table Machines",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 1130,
+        "y": 140,
+        "wires": [
+            [
+                "27dec04cad21ab29"
+            ]
+        ]
+    },
+    {
+        "id": "a72d7fa5920df885",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Send data SQLite",
+        "func": "let { unitProd, deviceID, timestamp } = msg.payload\n\nif (typeof (unitProd) === 'string') {\n    let insertCommand = `\n    INSERT INTO Machines (unitProd, deviceID, timestamp)\n    VALUES ('${unitProd}', '${deviceID}', ${timestamp});\n`;\n\n    msg.topic = insertCommand;\n    return msg;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1290,
+        "y": 240,
+        "wires": [
+            [
+                "4ea2f4f86bca809c"
+            ]
+        ],
+        "icon": "node-red-node-sqlite/sqlite.png"
+    },
+    {
+        "id": "ee596a7f25159375",
+        "type": "function",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Send data for SQLite",
+        "func": "let selectCommand = 'SELECT * FROM Machines;';\nmsg.topic = selectCommand;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1380,
+        "y": 180,
+        "wires": [
+            [
+                "4ea2f4f86bca809c"
+            ]
+        ],
+        "icon": "node-red/file.svg"
+    },
+    {
+        "id": "86adb0d6d9f47166",
+        "type": "inject",
+        "z": "2b26a0eb9e3a475a",
+        "name": "Select Table",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 1070,
+        "y": 180,
+        "wires": [
+            [
+                "ee596a7f25159375"
+            ]
+        ]
+    },
+    {
+        "id": "e772e303aece2075",
+        "type": "ui_group",
+        "name": "CNC 01",
+        "tab": "7e567735e7b93ae2",
+        "order": 1,
+        "disp": true,
+        "width": "8",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "5e7724e268dab539",
+        "type": "sqlitedb",
+        "db": ":memory:",
+        "mode": "RWC"
+    },
+    {
+        "id": "7e567735e7b93ae2",
+        "type": "ui_tab",
+        "name": "Test V0",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    }
+]
