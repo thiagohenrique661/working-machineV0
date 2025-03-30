@@ -1,86 +1,86 @@
-🚀 Guia de Instalação e Uso
-Este projeto utiliza Node-RED para simular a produção de peças e armazenar os dados em um banco SQLite.
+# 🚀 Guia de Instalação e Uso  
 
-📌 Pré-requisitos
-Node.js instalado na máquina
+Este projeto utiliza **Node-RED** para simular a produção de peças e armazenar os dados em um banco SQLite.  
 
-Node-RED instalado
+---
 
-⚙️ Como Rodar o Projeto
-Baixe e instale o Node-RED pelo site https://nodered.org/.
+## 📌 Pré-requisitos  
 
-No terminal (CMD, PowerShell ou Terminal Linux), execute:
+- [Node.js](https://nodejs.org/) instalado na máquina  
+- [Node-RED](https://nodered.org/) instalado  
 
-sh
-Copiar
-Editar
-node-red
-No navegador, acesse a interface do Node-RED pelo endereço: http://127.0.0.1:1880/
+---
 
-Importe o fluxo do projeto:
+## ⚙️ Como Rodar o Projeto  
 
-No Node-RED, clique no menu superior direito (☰) > Importar > Selecionar arquivo.
+1. **Baixe e instale o Node-RED** pelo site [https://nodered.org/](https://nodered.org/).  
+2. No terminal (CMD, PowerShell ou Terminal Linux), execute:  
+   ```sh
+   node-red
 
-Escolha o arquivo flows.json localizado na pasta content.
+3. No navegador, acesse a interface do Node-RED pelo endereço: http://127.0.0.1:1880/
+4. Importe o fluxo do projeto:
 
-Confirme a importação clicando em Importar.
+    No Node-RED, clique no menu superior direito (☰) > Import > Selecionar arquivo.
 
-🔎 Como Visualizar os Dados no Banco de Dados SQLite
-Opção 1: Pelo Node-RED (Debug)
-No Node-RED, localize o nó :memory.
+    Escolha o arquivo flows.json localizado na pasta content.
 
-Adicione um nó Debug na saída desse nó para visualizar os dados processados.
+    Confirme a importação clicando em Importar.
 
-Clique no botão Inject "Select table" para buscar os dados no banco de dados.
 
-Os valores aparecerão na aba Debug, no painel direito da tela do Node-RED.
+5. Como Visualizar os Dados no Banco de Dados SQLite
+    Opção 1: Pelo Node-RED (Debug)
+    No Node-RED, localize o nó :memory.
 
-Opção 2: Acessando o SQLite Manualmente
-Caso queira acessar os dados diretamente pelo banco SQLite, siga estes passos:
+6. Adicione um nó Debug na saída desse nó para visualizar os dados processados.
 
-Instale o SQLite CLI (caso não tenha):
+    Clique no botão Inject "Select table" para buscar os dados no banco de dados.
 
-Windows: baixe o SQLite CLI em https://www.sqlite.org/download.html.
+    Os valores aparecerão na aba Debug, no painel direito da tela do Node-RED.
 
-Linux/Mac: instale via terminal:
+    Opção 2: Acessando o SQLite Manualmente
+    Caso queira acessar os dados diretamente pelo banco SQLite, siga estes passos:
 
-sh
-Copiar
-Editar
-sudo apt install sqlite3  # Debian/Ubuntu  
-brew install sqlite       # macOS  
-No terminal, abra o SQLite e carregue o banco de dados do Node-RED:
+7. Instale o SQLite CLI (caso não tenha):
 
-sh
-Copiar
-Editar
-sqlite3 database.db
-Para visualizar os dados da tabela, execute:
+    No Windows, baixe o SQLite CLI em https://www.sqlite.org/download.html.
 
-sql
-Copiar
-Editar
-SELECT * FROM nome_da_tabela;
-Para sair do SQLite, use:
+    No Linux/Mac, instale via terminal:
 
-sh
-Copiar
-Editar
-.exit
-📊 Como Acessar o Dashboard
-O projeto inclui um Dashboard para visualização dos dados em tempo real. Para acessá-lo:
+    sh
+    Copiar
+    Editar
+    sudo apt install sqlite3  # Debian/Ubuntu  
+    brew install sqlite       # macOS  
+    No terminal, abra o SQLite e carregue o banco de dados do Node-RED:
 
-Certifique-se de que o Node-RED está rodando.
+    sh
+    Copiar
+    Editar
+    sqlite3 database.db
+    Para visualizar os dados da tabela, execute:
 
-Instale a dependência node-red-dashboard:
+    sql
+    Copiar
+    Editar
+    SELECT * FROM nome_da_tabela;
+    Para sair do SQLite, use:
 
-sh
-Copiar
-Editar
-npm install node-red-dashboard
-No navegador, abra o seguinte endereço:
+    sh
+    Copiar
+    Editar
+    .exit
 
-sh
-Copiar
-Editar
-http://127.0.0.1:1880/ui/
+8. Como Acessar o Dashboard
+    O projeto inclui um Dashboard para visualização dos dados em tempo real. Para acessá-lo:
+
+    Certifique-se de que o Node-RED está rodando.
+
+    instale a dependência node-red-dashboard
+
+    No navegador, abra o seguinte endereço:
+
+    arduino
+    Copiar
+    Editar
+    http://127.0.0.1:1880/ui/
